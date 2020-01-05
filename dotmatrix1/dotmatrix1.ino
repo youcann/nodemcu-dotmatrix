@@ -9,16 +9,19 @@
 #define CS_PIN    D6
 MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 
+//MD_Parola P = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
+
 char display[20];
 //mymurks
 uint8_t degC[] = { 6, 3, 3, 56, 68, 68, 68 }; // Deg C
 ////////////////////////////////////////
 //BMW280////////////////////////////////
 #include <Wire.h>
-#include <SPI.h>
+//#include <SPI.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
-#define SEALEVELPRESSURE_HPA (1013.25)
+//#define SEALEVELPRESSURE_HPA (1013.25)
+#define SEALEVELPRESSURE_HPA (1038.1)
 
 Adafruit_BME280 bme; // I2C
 unsigned long delayTime;
@@ -28,10 +31,14 @@ float bme_temp, bme_humidity, bme_pressure;
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
-const char *ssid     = "SSID";
-const char *password = "PSK";
+const char *ssid     = "Hotpoint";
+const char *password = "6161616161";
 const long utcOffsetInSeconds = 3600;
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+//char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+char daysOfTheWeek[7][12] = {"SON", "MON", "DIE", "MIT", "DON", "FRE", "SAM"};
+long epoch;
+long day;
+int day_of_week;
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
@@ -40,24 +47,29 @@ int ntp_hours, ntp_minutes, ntp_sec;
 
 void setup(void)
 {
+delay(5000); 
+//Serial////////////////////////////////
+Serial.begin(9600);
+while(!Serial); 
+
+//BMW280////////////////////////////////
+unsigned status;
+status = bme.begin();  
+if (!status) {
+      Serial.println("Could not find a valid BME280 sensor, check wiring, address, sensor ID!");
+      Serial.print("SensorID was: 0x"); Serial.println(bme.sensorID(),16);
+      while (1);
+}
+Serial.println("Setup");
+
 //DOTMATRIX/////////////////////////////
+
+P.begin();
 P.begin();
 P.setIntensity(1);
-P.addChar('$', degC);
-//P.displayText("12:34  22.45$", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);
-P.displayReset();
-////////////////////////////////////////
-//BMW280////////////////////////////////
-Serial.begin(9600);
-    while(!Serial); 
-    unsigned status;
-    status = bme.begin();  
-    if (!status) {
-        Serial.println("Could not find a valid BME280 sensor, check wiring, address, sensor ID!");
-        Serial.print("SensorID was: 0x"); Serial.println(bme.sensorID(),16);
-        while (1);
-    }
-////////////////////////////////////////
+//P.addChar('$', degC);
+
+
 //NTP///////////////////////////////////
 WiFi.begin(ssid, password);
 
@@ -65,10 +77,15 @@ WiFi.begin(ssid, password);
     delay ( 500 );
     Serial.print ( "." );
   }
-
+  P.displayText("Connected", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);
+  P.displayAnimate();
+  delay(500);
   timeClient.begin();
-////////////////////////////////////////
+  epoch = timeClient.getEpochTime();
+  day = epoch / 86400L;
+  day_of_week = day % 7; // 0=Sunday, 1=Monday, ...
 }
+
 
 void loop(void)
 {
@@ -76,6 +93,7 @@ void loop(void)
 bme_temp=bme.readTemperature();
 bme_humidity=bme.readHumidity();
 bme_pressure=bme.readPressure() / 100.0F;
+
 ////////////////////////////////////////
 //NTP///////////////////////////////////
 timeClient.update();
@@ -84,7 +102,7 @@ ntp_minutes=timeClient.getMinutes();
 ntp_sec=timeClient.getSeconds();
 ////////////////////////////////////////
 //DOTMATRIX/////////////////////////////
-sprintf(display,"%02d:%02d:%02d",ntp_hours,ntp_minutes,ntp_sec);
+sprintf(display,"%s %02d:%02d:%02d",daysOfTheWeek[day_of_week],ntp_hours,ntp_minutes,ntp_sec);
 
 P.displayText(display, PA_LEFT, 0, 0, PA_PRINT, PA_NO_EFFECT);
 P.displayAnimate();
@@ -92,9 +110,6 @@ delay(100);
 ////////////////////////////////////////
 
 }
-
-
-
 
 
 //DOTMATRIX/////////////////////////////
