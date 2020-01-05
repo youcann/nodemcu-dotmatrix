@@ -26,6 +26,8 @@ uint8_t degC[] = { 6, 3, 3, 56, 68, 68, 68 }; // Deg C
 Adafruit_BME280 bme; // I2C
 unsigned long delayTime;
 float bme_temp, bme_humidity, bme_pressure;
+
+
 ////////////////////////////////////////
 //NTP///////////////////////////////////
 #include <NTPClient.h>
@@ -43,6 +45,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
 int ntp_hours, ntp_minutes, ntp_sec;
+int counter;
 ////////////////////////////////////////
 
 void setup(void)
@@ -67,8 +70,7 @@ Serial.println("Setup");
 P.begin();
 P.begin();
 P.setIntensity(1);
-//P.addChar('$', degC);
-
+P.addChar('$', degC);
 
 //NTP///////////////////////////////////
 WiFi.begin(ssid, password);
@@ -77,23 +79,21 @@ WiFi.begin(ssid, password);
     delay ( 500 );
     Serial.print ( "." );
   }
-  P.displayText("Connected", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);
-  P.displayAnimate();
-  delay(500);
-  timeClient.begin();
-  epoch = timeClient.getEpochTime();
-  day = epoch / 86400L;
-  day_of_week = day % 7; // 0=Sunday, 1=Monday, ...
+P.displayText("Connected ", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);
+P.displayAnimate();
+delay(500);
+timeClient.begin();
+epoch = timeClient.getEpochTime();
+day = epoch / 86400L;
+day_of_week = day % 7; // 0=Sunday, 1=Monday, ...
+counter = 0;
 }
 
 
 void loop(void)
 {
-//BMW280////////////////////////////////
-bme_temp=bme.readTemperature();
-bme_humidity=bme.readHumidity();
-bme_pressure=bme.readPressure() / 100.0F;
 
+while(counter < 100){
 ////////////////////////////////////////
 //NTP///////////////////////////////////
 timeClient.update();
@@ -106,7 +106,24 @@ sprintf(display,"%s %02d:%02d:%02d",daysOfTheWeek[day_of_week],ntp_hours,ntp_min
 
 P.displayText(display, PA_LEFT, 0, 0, PA_PRINT, PA_NO_EFFECT);
 P.displayAnimate();
+counter++;
 delay(100);
+}
+counter = 0;
+//BMW280////////////////////////////////
+bme_temp=bme.readTemperature();
+bme_humidity=bme.readHumidity();
+bme_pressure=bme.readPressure() / 100.0F;
+
+sprintf(display,"%.1f $ %.1f %%",bme_temp,bme_humidity);
+P.displayText(display, PA_LEFT, 0, 0, PA_PRINT, PA_NO_EFFECT);
+P.displayAnimate();
+
+delay(5000);
+sprintf(display,"%.1f hPa", bme_pressure);
+P.displayText(display, PA_LEFT, 0, 0, PA_PRINT, PA_NO_EFFECT);
+P.displayAnimate();
+delay(5000);
 ////////////////////////////////////////
 
 }
