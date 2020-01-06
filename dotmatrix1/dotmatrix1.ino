@@ -8,13 +8,12 @@
 #define DATA_PIN  D5
 #define CS_PIN    D6
 MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
-
-//MD_Parola P = MD_Parola(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
-
 char display[20];
+
 //mymurks
 uint8_t degC[] = { 6, 3, 3, 56, 68, 68, 68 }; // Deg C
 ////////////////////////////////////////
+
 //BMW280////////////////////////////////
 #include <Wire.h>
 //#include <SPI.h>
@@ -24,11 +23,9 @@ uint8_t degC[] = { 6, 3, 3, 56, 68, 68, 68 }; // Deg C
 #define SEALEVELPRESSURE_HPA (1038.1)
 
 Adafruit_BME280 bme; // I2C
-unsigned long delayTime;
 float bme_temp, bme_humidity, bme_pressure;
-
-
 ////////////////////////////////////////
+
 //NTP///////////////////////////////////
 #include <NTPClient.h>
 #include <ESP8266WiFi.h>
@@ -37,13 +34,10 @@ const char *ssid     = "SSID";
 const char *password = "PSK";
 const long utcOffsetInSeconds = 3600;
 //char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-char daysOfTheWeek[7][12] = {"SON", "MON", "DIE", "MIT", "DON", "FRE", "SAM"};
-long epoch;
-long day;
-int day_of_week;
+char daysOfTheWeek[7][4] = {"SON", "MON", "DIE", "MIT", "DON", "FRE", "SAM"};
+int day;
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
-
+NTPClient timeClient(ntpUDP, "pool.ntp.org",utcOffsetInSeconds);
 int ntp_hours, ntp_minutes, ntp_sec;
 int counter;
 ////////////////////////////////////////
@@ -55,7 +49,7 @@ void setup(void)
 Serial.begin(9600);
 while(!Serial); 
 
-//BMW280////////////////////////////////
+//BMW280
 unsigned status;
 status = bme.begin();  
 if (!status) {
@@ -65,74 +59,70 @@ if (!status) {
 }
 Serial.println("Setup");
 
-//DOTMATRIX/////////////////////////////
+//DOTMATRIX
 
 P.begin();
 P.begin();
 P.setIntensity(1);
 P.addChar('$', degC);
 
-//NTP///////////////////////////////////
+//WiFi
 WiFi.begin(ssid, password);
 
-  while ( WiFi.status() != WL_CONNECTED ) {
+while ( WiFi.status() != WL_CONNECTED ) {
     delay ( 500 );
     Serial.print ( "." );
-  }
+}
 P.displayText("Connected ", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);
 P.displayAnimate();
 delay(500);
+
+//NTP
 timeClient.begin();
-epoch = timeClient.getEpochTime();
-day = epoch / 86400L;
-day_of_week = day % 7; // 0=Sunday, 1=Monday, ...
-counter = 0;
-}
-
-
-void loop(void)
-{
-
-while(counter < 100){
-////////////////////////////////////////
-//NTP///////////////////////////////////
+delay(500);
 timeClient.update();
-ntp_hours=timeClient.getHours();
-ntp_minutes=timeClient.getMinutes();
-ntp_sec=timeClient.getSeconds();
-////////////////////////////////////////
-//DOTMATRIX/////////////////////////////
-sprintf(display,"%s %02d:%02d:%02d",daysOfTheWeek[day_of_week],ntp_hours,ntp_minutes,ntp_sec);
+day = timeClient.getDay(); //get current day, 0=Sunday ...
+counter = 0;
+}
 
-P.displayText(display, PA_LEFT, 0, 0, PA_PRINT, PA_NO_EFFECT);
-P.displayAnimate();
-counter++;
-delay(100);
+
+void loop(void){
+//get current time and display (10 seconds)
+while(counter < 100){
+  timeClient.update();
+  ntp_hours=timeClient.getHours();
+  ntp_minutes=timeClient.getMinutes();
+  ntp_sec=timeClient.getSeconds();
+
+  sprintf(display,"%s %02d:%02d:%02d",daysOfTheWeek[day],ntp_hours,ntp_minutes,ntp_sec);
+  P.displayText(display, PA_LEFT, 0, 0, PA_PRINT, PA_NO_EFFECT);
+  P.displayAnimate();
+  counter++;
+  delay(100);
 }
 counter = 0;
-//BMW280////////////////////////////////
+
+//get sensor values
 bme_temp=bme.readTemperature();
 bme_humidity=bme.readHumidity();
 bme_pressure=bme.readPressure() / 100.0F;
 
+//display sensor values 
+//temperature and humidity (5 seconds)
 sprintf(display,"%.1f $ %.1f %%",bme_temp,bme_humidity);
 P.displayText(display, PA_LEFT, 0, 0, PA_PRINT, PA_NO_EFFECT);
 P.displayAnimate();
-
 delay(5000);
+//pressure (5 seconds)
 sprintf(display,"%.1f hPa", bme_pressure);
 P.displayText(display, PA_LEFT, 0, 0, PA_PRINT, PA_NO_EFFECT);
 P.displayAnimate();
 delay(5000);
-////////////////////////////////////////
-
 }
 
 
-//DOTMATRIX/////////////////////////////
 
-////////////////////////////////////////
-//BMW280////////////////////////////////
+// Get values from sensor and print 
 void printValues() {
     Serial.print("Temperature = ");
     Serial.print(bme.readTemperature());
@@ -153,7 +143,3 @@ void printValues() {
 
     Serial.println();
 }
-////////////////////////////////////////
-//NTP///////////////////////////////////
-
-////////////////////////////////////////
