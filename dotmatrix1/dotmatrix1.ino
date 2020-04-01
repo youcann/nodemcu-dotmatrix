@@ -60,7 +60,6 @@ if (!status) {
 Serial.println("Setup");
 
 //DOTMATRIX
-
 P.begin();
 P.begin();
 P.setIntensity(1);
