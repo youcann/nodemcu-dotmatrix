@@ -11,3 +11,4 @@ File -> Preferences -> Additional Boards Manager URLs -> [http://arduino.esp8266
 * Adafruit BME280 Library (by Adafruit)
 * MD_MAX72XX (by majicDesigns)
 * MD_Parola (by majicDesigns)
+* PubSubClient (by Nick O'Leary)
