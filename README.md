@@ -5,6 +5,9 @@ Use a NodeMCU to display the time (via NTP) and the current room temperature/hum
 You need to add the NodeMCU-Board to the Arduino IDE:
 File -> Preferences -> Additional Boards Manager URLs -> [http://arduino.esp8266.com/stable/package_esp8266com_index.json!](http://arduino.esp8266.com/stable/package_esp8266com_index.json)
 
+# MQTT 
+Be sure to change the value for ``MQTT_MAX_PACKET_SIZE`` in ``PubSubClient.h`` to 512.
+
 # Needed Libraries
 * NTPClient (by Fabrice Weinberg)
 * Adafruit Unified Sensor (by Adafruit)
