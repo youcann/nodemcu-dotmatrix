@@ -13,10 +13,10 @@ MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
 char display[20];
 
 //Scrolling
-#define  BUF_SIZE  150
+#define  BUF_SIZE  500
 char newMessage[BUF_SIZE] = { " " };
 char prevMessage[BUF_SIZE] = { " " };
-uint8_t scrollSpeed = 35;    // default frame delay value
+uint8_t scrollSpeed = 70;    // default frame delay value
 textEffect_t scrollEffect = PA_SCROLL_LEFT;
 textPosition_t scrollAlign = PA_LEFT;
 uint16_t scrollPause = 0; // in milliseconds
@@ -29,6 +29,8 @@ const char *password = "";
 
 //----------------------- MQTT -------------------------
 const char* mqtt_server = "80.240.20.56";
+const char* mqtt_client = "";
+const char* mqtt_topic = "";
 WiFiClient espClient;
 PubSubClient client(espClient);
 //------------------------------------------------------
@@ -36,13 +38,16 @@ PubSubClient client(espClient);
 void reconnect() {
     while (!client.connected()) {
         Serial.print("Reconnecting...");
-        if (!client.connect("ESP8266Client")) {
+        if (!client.connect(mqtt_client)) {
             Serial.print("failed, rc=");
             Serial.print(client.state());
             Serial.println(" retrying in 5 seconds");
             delay(5000);
         }
     }
+    client.subscribe(mqtt_topic);
+    Serial.println("mqtt reconnected"); 
+    
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -81,25 +86,30 @@ Serial.println("Setup");
 P.begin();
 P.begin();
 P.setIntensity(1);
-P.addChar('$', degC);
 
 //WiFi
 WiFi.begin(ssid, password);
 
+P.displayText("wifi?", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);  
+P.displayAnimate();
+delay(500);
 while ( WiFi.status() != WL_CONNECTED ) {
     delay ( 500 );
     Serial.print ( "." );
 }
-P.displayText("Connected", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);  
+P.displayText("wifi!", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);  
 P.displayAnimate();
 delay(500);
 
 
 //MQTT
+P.displayText("mqtt?", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);  
+P.displayAnimate();
+delay(500);
 client.setServer(mqtt_server, 1883);
 client.setCallback(callback);
 
-while (!client.connect("baguetteESP")) {
+while (!client.connect(mqtt_client)) {
     Serial.println("Connecting to MQTT...");
     if (client.connected()) {
       Serial.println("connected"); 
@@ -110,9 +120,15 @@ while (!client.connect("baguetteESP")) {
       delay(2000);
     }
  }
- client.subscribe("covid19");
-}
+ client.subscribe(mqtt_topic);
+ P.displayText("mqtt!", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);  
+P.displayAnimate();
+delay(500);
 
+P.displayText("data?", PA_CENTER, 0, 0, PA_PRINT, PA_NO_EFFECT);  
+P.displayAnimate();
+delay(500);
+}
 
 
 void loop(void){
